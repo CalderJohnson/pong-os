@@ -8,21 +8,20 @@
 #include "main.h"
 
 //declarations of globals
-volatile enum BallDirection ballDirection;
-volatile uint16_t playerPaddleX;
-volatile uint16_t playerPaddleY;
-volatile uint16_t enemyPaddleX;
-volatile uint16_t enemyPaddleY;
-volatile uint16_t ballX;
-volatile uint16_t ballY;
-uint32_t playerScore;
-uint32_t enemyScore;
+enum BallDirection ballDirection;
+uint16_t playerPaddleX;
+volatile uint16_t playerPaddleY; //gets modified when keyboard irq is triggered
+uint16_t enemyPaddleX;
+uint16_t enemyPaddleY;
+uint16_t ballX;
+uint16_t ballY;
+struct ScoreBoard scoreBoard;
 
 void keyboard_input(char key) { //player control
-    if (key == 'w') {
+    if (key == 'w' && playerPaddleY > 0) {
         playerPaddleY -= 3;
     }
-    else if (key == 's') {
+    else if (key == 's' && playerPaddleY < 180) {
         playerPaddleY += 3;
     }
 }
@@ -36,15 +35,15 @@ void kernel_main() {
     ballX = 160;
     ballY = 100;
     ballDirection = upRight;
-    playerScore = 0;
-    enemyScore = 0;
+    scoreBoard.playerScore = 0;
+    scoreBoard.enemyScore = 0;
 
     isr_install();
     irq_install();
     clock_t gameClock;
     init_clock(&gameClock);
 
-    loop:
+    while(true) {
         if (get_elapsed_time_ms(&gameClock) > 10) {
             if (ballY <= 0 || ballY >= 195) { //bounce ball (walls)
                 switch (ballDirection) { 
@@ -63,10 +62,10 @@ void kernel_main() {
                 }
             }
             if (ballX <= 0 || ballX >= 315) { //reset ball position
+                if (ballX <= 0) scoreBoard.enemyScore++;
+                else scoreBoard.playerScore++;
                 ballX = 160;
                 ballY = 100;
-                if (ballX <= 0) enemyScore++;
-                else playerScore++;
             }
             else if (ballX <= 15) {//left paddle collision detection
                 if (ballY + 5 > playerPaddleY && ballY < playerPaddleY + 20) {
@@ -92,7 +91,7 @@ void kernel_main() {
                 if (enemyPaddleY <= 0) { //doesn't go off edge
                     enemyPaddleY++;
                 }
-                else if (enemyPaddleY >= 200) {
+                else if (enemyPaddleY >= 180) {
                     enemyPaddleY--;
                 }
                 else if (ballY + 2 > enemyPaddleY + 10) { //tries to keep centered on ball
@@ -126,6 +125,7 @@ void kernel_main() {
         draw_box(ballX, ballY, ballX + 5, ballY + 5, WHITE);
         draw_box(playerPaddleX, playerPaddleY, playerPaddleX + 5, playerPaddleY + 20, WHITE);
         draw_box(enemyPaddleX, enemyPaddleY, enemyPaddleX + 5, enemyPaddleY + 20, WHITE);
+        draw_scoreboard(&scoreBoard);
         write();
-    goto loop;
+    }
 }

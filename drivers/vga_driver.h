@@ -25,8 +25,15 @@ enum VgaColor {
     WHITE
 };
 
+struct ScoreBoard {
+    uint32_t playerScore;
+    uint32_t enemyScore;
+};
+
 void draw_pixel(uint16_t x, uint16_t y, enum VgaColor color);
 void draw_box(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, enum VgaColor color);
+void draw_digit(uint16_t x, uint16_t y, enum VgaColor, uint8_t digit);
+void draw_scoreboard(struct ScoreBoard *scoreboard);
 void write();
 void clear();
 
