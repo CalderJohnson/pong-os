@@ -1,5 +1,4 @@
 #include "keyboard.h"
-#include "vga_driver.h"
 #include "../x86/ports.h"
 #include "../x86/isr.h"
 #include "../kernel/type.h"
